@@ -284,7 +284,7 @@ void write_block_bitmap(int fd)
 	}
 
 	// TODO It's all yours
-	u8 map_value[BLOCK_SIZE*8] = {0};
+	u8 map_value[BLOCK_SIZE] = {0};
 
 	if (write(fd, map_value, BLOCK_SIZE) != BLOCK_SIZE)
 	{
@@ -301,7 +301,7 @@ void write_inode_bitmap(int fd)
 	}
 
 	// TODO It's all yours
-	u8 map_value[BLOCK_SIZE*8] = {0};
+	u8 map_value[BLOCK_SIZE] = {0};
 
 	if (write(fd, map_value, BLOCK_SIZE) != BLOCK_SIZE)
 	{
@@ -491,9 +491,9 @@ void write_hello_world_file_block(int fd)
 	}
 
 	ssize_t bytes_written = write(fd, "Hello world\n", 12);
-    if (bytes_written == -1) {
+    if (bytes_written != 12) {
         errno_exit("write");
-	
+	}
 
 }
 
