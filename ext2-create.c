@@ -415,7 +415,7 @@ void write_inode_table(int fd) {
 	                              | EXT2_S_IRGRP
 	                              | EXT2_S_IROTH;
 	hello_world_file_inode.i_uid = 1000;
-	hello_world_file_inode.i_size = 1024;
+	hello_world_file_inode.i_size = strlen("Hello world\n");
 	hello_world_file_inode.i_atime = current_time;
 	hello_world_file_inode.i_ctime = current_time;
 	hello_world_file_inode.i_mtime = current_time;
