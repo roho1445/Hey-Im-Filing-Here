@@ -434,15 +434,15 @@ void write_inode_table(int fd) {
 	                              | EXT2_S_IRGRP
 	                              | EXT2_S_IROTH;
 	hello_symbolic_inode.i_uid = 1000;
-	hello_symbolic_inode.i_size = 1024;
+	hello_symbolic_inode.i_size = strlen("hello-world");
 	hello_symbolic_inode.i_atime = current_time;
 	hello_symbolic_inode.i_ctime = current_time;
 	hello_symbolic_inode.i_mtime = current_time;
 	hello_symbolic_inode.i_dtime = 0;
 	hello_symbolic_inode.i_gid = 1000;
 	hello_symbolic_inode.i_links_count = 1;
-	//hello_symbolic_inode.i_blocks = 2; /* These are oddly 512 blocks */
-	memcpy(hello_symbolic_inode.i_block, "hello-world", strlen("hello-world")+ 1);
+	hello_symbolic_inode.i_blocks = 0; /* These are oddly 512 blocks */
+	memcpy(&hello_symbolic_inode.i_block, "hello-world", strlen("hello-world"));
 	write_inode(fd, HELLO_INO, &hello_symbolic_inode);
 }
 
@@ -476,7 +476,7 @@ void write_root_dir_block(int fd)
 	bytes_remaining -= hello_world_file.rec_len;
 
 	struct ext2_dir_entry lost_and_found_dir = {0};
-	dir_entry_set(lost_and_found_dir, LOST_AND_FOUND_INO, "lost_found");
+	dir_entry_set(lost_and_found_dir, LOST_AND_FOUND_INO, "lost+found");
 	dir_entry_write(lost_and_found_dir, fd);
 
 	bytes_remaining -= lost_and_found_dir.rec_len;
