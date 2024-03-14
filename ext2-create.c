@@ -262,12 +262,12 @@ void write_block_group_descriptor_table(int fd) {
 
 	// TODO It's all yours
 	// TODO finish the block group descriptor number setting
-	block_group_descriptor.bg_block_bitmap = BLOCK_OFFSET(BLOCK_BITMAP_BLOCKNO);
-	block_group_descriptor.bg_inode_bitmap = BLOCK_OFFSET(INODE_BITMAP_BLOCKNO);
-	block_group_descriptor.bg_inode_table = BLOCK_OFFSET(INODE_TABLE_BLOCKNO);
+	block_group_descriptor.bg_block_bitmap = BLOCK_BITMAP_BLOCKNO;
+	block_group_descriptor.bg_inode_bitmap = INODE_BITMAP_BLOCKNO;
+	block_group_descriptor.bg_inode_table = INODE_TABLE_BLOCKNO;
 	block_group_descriptor.bg_free_blocks_count = NUM_FREE_BLOCKS;
 	block_group_descriptor.bg_free_inodes_count = NUM_FREE_INODES;
-	block_group_descriptor.bg_used_dirs_count = 0;
+	block_group_descriptor.bg_used_dirs_count = 2;
 
 	ssize_t size = sizeof(block_group_descriptor);
 	if (write(fd, &block_group_descriptor, size) != size) {
@@ -284,7 +284,26 @@ void write_block_bitmap(int fd)
 	}
 
 	// TODO It's all yours
-	u8 map_value[BLOCK_SIZE] = {0};
+	u8 map_value[BLOCK_SIZE];
+	for(int i = 0; i < BLOCK_SIZE; i++)
+	{
+		if(i < 2 || i > 127)
+		{
+			map_value[i] = 0b11111111;
+		}
+		else if (i == 2)
+		{
+			map_value[i] = 0b01111111;
+		}
+		else if (i == 127)
+		{
+			map_value[i] = 0b10000000;
+		}
+		else
+		{
+			map_value[i] = 0b00000000;
+		}
+	}
 
 	if (write(fd, map_value, BLOCK_SIZE) != BLOCK_SIZE)
 	{
@@ -301,7 +320,27 @@ void write_inode_bitmap(int fd)
 	}
 
 	// TODO It's all yours
-	u8 map_value[BLOCK_SIZE] = {0};
+	u8 map_value[BLOCK_SIZE];
+	for(int i = 0; i < BLOCK_SIZE; i++)
+	{
+		if(i == 0)
+		{
+			map_value[i] = 0b11111111;
+		}
+		else if (i == 1)
+		{
+			map_value[i] = 0b00011111;
+		}
+		else if (i > 1 && i <= 15)
+		{
+			map_value[i] = 0b00000000;
+		}
+		else
+		{
+			map_value[i] = 0b11111111;
+		}
+	}
+
 
 	if (write(fd, map_value, BLOCK_SIZE) != BLOCK_SIZE)
 	{
@@ -326,29 +365,6 @@ void write_inode(int fd, u32 index, struct ext2_inode *inode) {
 void write_inode_table(int fd) {
 	u32 current_time = get_current_time();
 
-	struct ext2_inode lost_and_found_inode = {0};
-	lost_and_found_inode.i_mode = EXT2_S_IFDIR
-	                              | EXT2_S_IRUSR
-	                              | EXT2_S_IWUSR
-	                              | EXT2_S_IXUSR
-	                              | EXT2_S_IRGRP
-	                              | EXT2_S_IXGRP
-	                              | EXT2_S_IROTH
-	                              | EXT2_S_IXOTH;
-	lost_and_found_inode.i_uid = 0;
-	lost_and_found_inode.i_size = 1024;
-	lost_and_found_inode.i_atime = current_time;
-	lost_and_found_inode.i_ctime = current_time;
-	lost_and_found_inode.i_mtime = current_time;
-	lost_and_found_inode.i_dtime = 0;
-	lost_and_found_inode.i_gid = 0;
-	lost_and_found_inode.i_links_count = 2;
-	lost_and_found_inode.i_blocks = 2; /* These are oddly 512 blocks */
-	lost_and_found_inode.i_block[0] = LOST_AND_FOUND_DIR_BLOCKNO;
-	write_inode(fd, LOST_AND_FOUND_INO, &lost_and_found_inode);
-
-	// TODO It's all yours
-	// TODO finish the inode entries for the other files
 	struct ext2_inode root_dir_inode = {0};
 	root_dir_inode.i_mode = EXT2_S_IFDIR
 	                              | EXT2_S_IRUSR
@@ -370,6 +386,27 @@ void write_inode_table(int fd) {
 	root_dir_inode.i_block[0] = ROOT_DIR_BLOCKNO;
 	write_inode(fd, EXT2_ROOT_INO, &root_dir_inode);
 
+	struct ext2_inode lost_and_found_inode = {0};
+	lost_and_found_inode.i_mode = EXT2_S_IFDIR
+	                              | EXT2_S_IRUSR
+	                              | EXT2_S_IWUSR
+	                              | EXT2_S_IXUSR
+	                              | EXT2_S_IRGRP
+	                              | EXT2_S_IXGRP
+	                              | EXT2_S_IROTH
+	                              | EXT2_S_IXOTH;
+	lost_and_found_inode.i_uid = 0;
+	lost_and_found_inode.i_size = 1024;
+	lost_and_found_inode.i_atime = current_time;
+	lost_and_found_inode.i_ctime = current_time;
+	lost_and_found_inode.i_mtime = current_time;
+	lost_and_found_inode.i_dtime = 0;
+	lost_and_found_inode.i_gid = 0;
+	lost_and_found_inode.i_links_count = 2;
+	lost_and_found_inode.i_blocks = 2; /* These are oddly 512 blocks */
+	lost_and_found_inode.i_block[0] = LOST_AND_FOUND_DIR_BLOCKNO;
+	write_inode(fd, LOST_AND_FOUND_INO, &lost_and_found_inode);
+
 
 	struct ext2_inode hello_world_file_inode = {0};
 	hello_world_file_inode.i_mode = EXT2_S_IFREG
@@ -385,7 +422,7 @@ void write_inode_table(int fd) {
 	hello_world_file_inode.i_dtime = 0;
 	hello_world_file_inode.i_gid = 1000;
 	hello_world_file_inode.i_links_count = 1;
-	hello_world_file_inode.i_blocks = 1; /* These are oddly 512 blocks */
+	hello_world_file_inode.i_blocks = 2; /* These are oddly 512 blocks */
 	hello_world_file_inode.i_block[0] = HELLO_WORLD_FILE_BLOCKNO;
 	write_inode(fd, HELLO_WORLD_INO, &hello_world_file_inode);
 
@@ -404,8 +441,8 @@ void write_inode_table(int fd) {
 	hello_symbolic_inode.i_dtime = 0;
 	hello_symbolic_inode.i_gid = 1000;
 	hello_symbolic_inode.i_links_count = 1;
-	hello_symbolic_inode.i_blocks = 1; /* These are oddly 512 blocks */
-	hello_symbolic_inode.i_block[0] = HELLO_WORLD_FILE_BLOCKNO;
+	//hello_symbolic_inode.i_blocks = 2; /* These are oddly 512 blocks */
+	memcpy(hello_symbolic_inode.i_block, "hello-world", strlen("hello-world")+ 1);
 	write_inode(fd, HELLO_INO, &hello_symbolic_inode);
 }
 
